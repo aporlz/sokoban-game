@@ -246,23 +246,17 @@
         }
 
         .box {
-            background: #ffffff;
+            background-image: url('box.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
             position: relative;
             width: 100%;
             height: 100%;
         }
 
         .box::before {
-            content: '📦';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 45px;
+            content: '';
         }
 
         .box::after {
@@ -270,7 +264,10 @@
         }
 
         .box-on-target {
-            background: #ffffff;
+            background-image: url('box.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center;
             position: relative;
         }
 

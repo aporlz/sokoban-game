@@ -276,15 +276,19 @@
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%) scale(1);
             width: 40px;
             height: 40px;
             background-image: url('star.png');
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
-            animation: starSparkle 1.5s ease-out forwards;
             filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.45));
+            opacity: 1;
+        }
+
+        .box-on-target.new-star::before {
+            animation: starSparkle 1.5s ease-out forwards;
         }
 
         @keyframes starSparkle {
@@ -606,6 +610,7 @@
                 this.currentLevel = 0;
                 this.moves = 0;
                 this.playerDirection = 'right'; // 默认朝右
+                this.boxesOnTarget = new Set(); // 追踪已经在目标上的箱子
                 this.setupAudio();
                 this.loadLevel(this.currentLevel);
                 this.setupKeyboard();
@@ -732,6 +737,7 @@
             loadLevel(levelIndex) {
                 this.currentLevel = levelIndex;
                 this.moves = 0;
+                this.boxesOnTarget = new Set(); // 重置箱子状态
                 const level = LEVELS[levelIndex];
                 this.grid = level.map.map(row => row.split(''));
                 this.rows = this.grid.length;
@@ -778,7 +784,19 @@
                         if (cellValue === '#') {
                             cell.className += ' wall';
                         } else if (cellValue === '$') {
-                            cell.className += isTarget ? ' box-on-target' : ' box';
+                            const boxKey = `${r},${c}`;
+                            const isNewBoxOnTarget = isTarget && !this.boxesOnTarget.has(boxKey);
+
+                            if (isTarget) {
+                                cell.className += ' box-on-target';
+                                if (isNewBoxOnTarget) {
+                                    cell.classList.add('new-star');
+                                    this.boxesOnTarget.add(boxKey);
+                                }
+                            } else {
+                                cell.className += ' box';
+                                this.boxesOnTarget.delete(boxKey);
+                            }
                         } else if (isTarget) {
                             cell.className += ' target';
                             // 创建眼睛

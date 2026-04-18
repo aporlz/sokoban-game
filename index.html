@@ -19,8 +19,16 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            padding-bottom: 40px;
             position: relative;
             overflow: hidden;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding: 10px;
+                padding-bottom: 60px;
+            }
         }
 
         body::before {
@@ -83,6 +91,15 @@
             font-size: 20px;
             color: #333;
             font-weight: 600;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        @media (max-width: 767px) {
+            .info {
+                font-size: 16px;
+                margin-bottom: 15px;
+            }
         }
 
         .info div {
@@ -344,6 +361,14 @@
             gap: 15px;
             justify-content: center;
             margin-top: 25px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 767px) {
+            .controls {
+                margin-top: 15px;
+                gap: 8px;
+            }
         }
 
         button {
@@ -357,6 +382,14 @@
             border-radius: 12px;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767px) {
+            button {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
         }
 
         button:hover {
@@ -374,6 +407,7 @@
             gap: 8px;
             justify-content: center;
             margin-top: 20px;
+            margin-bottom: 30px;
         }
 
         .arrow-keys button {
@@ -387,6 +421,7 @@
         @media (min-width: 768px) {
             .arrow-keys {
                 grid-template-columns: repeat(3, 70px);
+                margin-bottom: 20px;
             }
 
             .arrow-keys button {
@@ -788,6 +823,15 @@
             }
 
             move(direction) {
+                // 确保音频已初始化
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioEnabled = true;
+                }
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
                 // 更新土拨鼠朝向
                 this.playerDirection = direction;
 
@@ -868,11 +912,29 @@
             }
 
             reset() {
+                // 确保音频已初始化
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioEnabled = true;
+                }
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
                 this.loadLevel(this.currentLevel);
                 document.getElementById('message').textContent = '';
             }
 
             nextLevel() {
+                // 确保音频已初始化
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioEnabled = true;
+                }
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
                 if (this.currentLevel < LEVELS.length - 1) {
                     this.loadLevel(this.currentLevel + 1);
                     document.getElementById('message').textContent = '';
@@ -880,6 +942,15 @@
             }
 
             prevLevel() {
+                // 确保音频已初始化
+                if (!this.audioContext) {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.audioEnabled = true;
+                }
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+
                 if (this.currentLevel > 0) {
                     this.loadLevel(this.currentLevel - 1);
                     document.getElementById('message').textContent = '';

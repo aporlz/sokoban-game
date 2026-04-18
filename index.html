@@ -17,17 +17,19 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
-            padding-bottom: 40px;
+            align-items: flex-start;
+            padding: 10px;
+            padding-top: 20px;
+            padding-bottom: 120px;
             position: relative;
-            overflow: hidden;
+            overflow-y: auto;
         }
 
-        @media (max-width: 767px) {
+        @media (min-width: 768px) {
             body {
-                padding: 10px;
-                padding-bottom: 60px;
+                align-items: center;
+                padding: 20px;
+                padding-bottom: 40px;
             }
         }
 
@@ -407,7 +409,7 @@
             gap: 8px;
             justify-content: center;
             margin-top: 20px;
-            margin-bottom: 30px;
+            margin-bottom: 50px;
         }
 
         .arrow-keys button {
@@ -416,6 +418,7 @@
             font-size: 24px;
             border-radius: 15px;
             padding: 0;
+            touch-action: manipulation;
         }
 
         @media (min-width: 768px) {
@@ -624,81 +627,112 @@
                 // 在第一次用户交互时初始化音频
                 const initAudio = () => {
                     if (!this.audioContext) {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        this.audioEnabled = true;
+                        try {
+                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            this.audioEnabled = true;
+                            console.log('Audio initialized');
+                        } catch (e) {
+                            console.error('Audio init failed:', e);
+                        }
                     }
                     // 恢复音频上下文（iOS需要）
-                    if (this.audioContext.state === 'suspended') {
-                        this.audioContext.resume();
+                    if (this.audioContext && this.audioContext.state === 'suspended') {
+                        this.audioContext.resume().then(() => {
+                            console.log('Audio resumed');
+                        });
                     }
                 };
 
-                // 监听第一次点击或触摸
+                // 监听多种事件以确保音频能初始化
                 document.addEventListener('touchstart', initAudio, { once: true });
+                document.addEventListener('touchend', initAudio, { once: true });
                 document.addEventListener('click', initAudio, { once: true });
+
+                // 微信浏览器特殊处理
+                if (typeof WeixinJSBridge !== 'undefined') {
+                    WeixinJSBridge.invoke('getNetworkType', {}, initAudio);
+                } else {
+                    document.addEventListener('WeixinJSBridgeReady', initAudio, false);
+                }
 
                 // 移动音效
                 this.playMoveSound = () => {
                     if (!this.audioEnabled || !this.audioContext) return;
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    oscillator.frequency.value = 400;
-                    oscillator.type = 'sine';
-                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-                    oscillator.start(this.audioContext.currentTime);
-                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        oscillator.frequency.value = 400;
+                        oscillator.type = 'sine';
+                        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.1);
+                    } catch (e) {
+                        console.error('Play sound failed:', e);
+                    }
                 };
 
                 // 推箱子音效
                 this.playPushSound = () => {
                     if (!this.audioEnabled || !this.audioContext) return;
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    oscillator.frequency.value = 200;
-                    oscillator.type = 'square';
-                    gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
-                    oscillator.start(this.audioContext.currentTime);
-                    oscillator.stop(this.audioContext.currentTime + 0.15);
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        oscillator.frequency.value = 200;
+                        oscillator.type = 'square';
+                        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.15);
+                    } catch (e) {
+                        console.error('Play sound failed:', e);
+                    }
                 };
 
                 // 过关音效
                 this.playWinSound = () => {
                     if (!this.audioEnabled || !this.audioContext) return;
-                    const notes = [523, 587, 659, 784];
-                    notes.forEach((freq, i) => {
-                        const oscillator = this.audioContext.createOscillator();
-                        const gainNode = this.audioContext.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        oscillator.frequency.value = freq;
-                        oscillator.type = 'sine';
-                        const startTime = this.audioContext.currentTime + i * 0.15;
-                        gainNode.gain.setValueAtTime(0.2, startTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
-                        oscillator.start(startTime);
-                        oscillator.stop(startTime + 0.3);
-                    });
+                    try {
+                        const notes = [523, 587, 659, 784];
+                        notes.forEach((freq, i) => {
+                            const oscillator = this.audioContext.createOscillator();
+                            const gainNode = this.audioContext.createGain();
+                            oscillator.connect(gainNode);
+                            gainNode.connect(this.audioContext.destination);
+                            oscillator.frequency.value = freq;
+                            oscillator.type = 'sine';
+                            const startTime = this.audioContext.currentTime + i * 0.15;
+                            gainNode.gain.setValueAtTime(0.2, startTime);
+                            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+                            oscillator.start(startTime);
+                            oscillator.stop(startTime + 0.3);
+                        });
+                    } catch (e) {
+                        console.error('Play sound failed:', e);
+                    }
                 };
 
                 // 错误音效
                 this.playErrorSound = () => {
                     if (!this.audioEnabled || !this.audioContext) return;
-                    const oscillator = this.audioContext.createOscillator();
-                    const gainNode = this.audioContext.createGain();
-                    oscillator.connect(gainNode);
-                    gainNode.connect(this.audioContext.destination);
-                    oscillator.frequency.value = 150;
-                    oscillator.type = 'sawtooth';
-                    gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-                    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-                    oscillator.start(this.audioContext.currentTime);
-                    oscillator.stop(this.audioContext.currentTime + 0.1);
+                    try {
+                        const oscillator = this.audioContext.createOscillator();
+                        const gainNode = this.audioContext.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(this.audioContext.destination);
+                        oscillator.frequency.value = 150;
+                        oscillator.type = 'sawtooth';
+                        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+                        oscillator.start(this.audioContext.currentTime);
+                        oscillator.stop(this.audioContext.currentTime + 0.1);
+                    } catch (e) {
+                        console.error('Play sound failed:', e);
+                    }
                 };
             }
 
@@ -825,11 +859,15 @@
             move(direction) {
                 // 确保音频已初始化
                 if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.audioEnabled = true;
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioEnabled = true;
+                    } catch (e) {
+                        console.error('Audio init in move failed:', e);
+                    }
                 }
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().catch(e => console.error('Resume failed:', e));
                 }
 
                 // 更新土拨鼠朝向
@@ -914,11 +952,13 @@
             reset() {
                 // 确保音频已初始化
                 if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.audioEnabled = true;
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioEnabled = true;
+                    } catch (e) {}
                 }
                 if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                    this.audioContext.resume().catch(e => {});
                 }
 
                 this.loadLevel(this.currentLevel);
@@ -928,11 +968,13 @@
             nextLevel() {
                 // 确保音频已初始化
                 if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.audioEnabled = true;
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioEnabled = true;
+                    } catch (e) {}
                 }
                 if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                    this.audioContext.resume().catch(e => {});
                 }
 
                 if (this.currentLevel < LEVELS.length - 1) {
@@ -944,11 +986,13 @@
             prevLevel() {
                 // 确保音频已初始化
                 if (!this.audioContext) {
-                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    this.audioEnabled = true;
+                    try {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioEnabled = true;
+                    } catch (e) {}
                 }
                 if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume();
+                    this.audioContext.resume().catch(e => {});
                 }
 
                 if (this.currentLevel > 0) {

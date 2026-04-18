@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>推箱子游戏</title>
     <style>
         * {
@@ -41,11 +41,20 @@
         .container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 30px;
-            padding: 40px;
+            padding: 20px;
             box-shadow: 0 30px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.2);
-            max-width: 1100px;
+            max-width: 100%;
+            width: 100%;
             position: relative;
             backdrop-filter: blur(10px);
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 40px;
+                max-width: 1100px;
+                width: auto;
+            }
         }
 
         h1 {
@@ -54,10 +63,17 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 25px;
-            font-size: 42px;
+            margin-bottom: 15px;
+            font-size: 28px;
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 42px;
+                margin-bottom: 25px;
+            }
         }
 
         .info {
@@ -80,23 +96,39 @@
         #game-board {
             display: grid;
             background: linear-gradient(135deg, #434343 0%, #000000 100%);
-            padding: 15px;
+            padding: 10px;
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 2px 10px rgba(255,255,255,0.1);
             gap: 2px;
             margin: 0 auto;
             width: fit-content;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        @media (min-width: 768px) {
+            #game-board {
+                padding: 15px;
+            }
         }
 
         .cell {
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 32px;
+            font-size: 28px;
             position: relative;
             transition: all 0.2s ease;
+        }
+
+        @media (min-width: 768px) {
+            .cell {
+                width: 50px;
+                height: 50px;
+                font-size: 32px;
+            }
         }
 
         .wall {
@@ -338,17 +370,30 @@
 
         .arrow-keys {
             display: grid;
-            grid-template-columns: repeat(3, 70px);
+            grid-template-columns: repeat(3, 60px);
             gap: 8px;
             justify-content: center;
             margin-top: 20px;
         }
 
         .arrow-keys button {
-            width: 70px;
-            height: 70px;
-            font-size: 28px;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
             border-radius: 15px;
+            padding: 0;
+        }
+
+        @media (min-width: 768px) {
+            .arrow-keys {
+                grid-template-columns: repeat(3, 70px);
+            }
+
+            .arrow-keys button {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
         }
 
         .arrow-keys button:nth-child(1) { grid-column: 2; }
@@ -537,11 +582,29 @@
             }
 
             setupAudio() {
-                // 创建音效上下文
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                // 创建音效上下文（需要用户交互才能启动）
+                this.audioContext = null;
+                this.audioEnabled = false;
+
+                // 在第一次用户交互时初始化音频
+                const initAudio = () => {
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        this.audioEnabled = true;
+                    }
+                    // 恢复音频上下文（iOS需要）
+                    if (this.audioContext.state === 'suspended') {
+                        this.audioContext.resume();
+                    }
+                };
+
+                // 监听第一次点击或触摸
+                document.addEventListener('touchstart', initAudio, { once: true });
+                document.addEventListener('click', initAudio, { once: true });
 
                 // 移动音效
                 this.playMoveSound = () => {
+                    if (!this.audioEnabled || !this.audioContext) return;
                     const oscillator = this.audioContext.createOscillator();
                     const gainNode = this.audioContext.createGain();
                     oscillator.connect(gainNode);
@@ -556,6 +619,7 @@
 
                 // 推箱子音效
                 this.playPushSound = () => {
+                    if (!this.audioEnabled || !this.audioContext) return;
                     const oscillator = this.audioContext.createOscillator();
                     const gainNode = this.audioContext.createGain();
                     oscillator.connect(gainNode);
@@ -570,6 +634,7 @@
 
                 // 过关音效
                 this.playWinSound = () => {
+                    if (!this.audioEnabled || !this.audioContext) return;
                     const notes = [523, 587, 659, 784];
                     notes.forEach((freq, i) => {
                         const oscillator = this.audioContext.createOscillator();
@@ -588,6 +653,7 @@
 
                 // 错误音效
                 this.playErrorSound = () => {
+                    if (!this.audioEnabled || !this.audioContext) return;
                     const oscillator = this.audioContext.createOscillator();
                     const gainNode = this.audioContext.createGain();
                     oscillator.connect(gainNode);
@@ -632,7 +698,8 @@
 
             render() {
                 const board = document.getElementById('game-board');
-                board.style.gridTemplateColumns = `repeat(${this.cols}, 50px)`;
+                const cellSize = window.innerWidth < 768 ? 40 : 50;
+                board.style.gridTemplateColumns = `repeat(${this.cols}, ${cellSize}px)`;
                 board.innerHTML = '';
 
                 for (let r = 0; r < this.rows; r++) {

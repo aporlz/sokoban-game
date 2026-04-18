@@ -188,61 +188,52 @@
 
         .target .eye-container {
             position: relative;
-            width: 35px;
-            height: 35px;
+            width: 30px;
+            height: 30px;
         }
 
         .target .eye-white {
             position: absolute;
-            width: 35px;
-            height: 35px;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #f0f0f0 60%, #e0e0e0);
+            width: 30px;
+            height: 30px;
+            background: #ffffff;
             border-radius: 50%;
-            box-shadow:
-                inset 0 2px 4px rgba(0,0,0,0.1),
-                0 2px 8px rgba(100,150,200,0.3);
-            filter: blur(0.3px);
+            border: 2px solid #d5deea;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
         .target .eye-iris {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle at 35% 35%,
-                #87ceeb 0%,
-                #4a9fd8 30%,
-                #2171b5 60%,
-                #1a5490 100%);
+            background: #2f80d8;
             border-radius: 50%;
             transition: all 0.3s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            filter: blur(0.2px);
+            border: 1px solid #1f5ea1;
         }
 
         .target .eye-pupil {
             position: absolute;
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: radial-gradient(circle at 30% 30%, #333, #000);
+            background: #111111;
             border-radius: 50%;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
         .target .eye-highlight {
             position: absolute;
-            width: 6px;
-            height: 6px;
-            top: 25%;
-            left: 30%;
-            background: radial-gradient(circle, rgba(255,255,255,0.9), transparent);
+            width: 4px;
+            height: 4px;
+            top: 28%;
+            left: 34%;
+            background: rgba(255,255,255,0.95);
             border-radius: 50%;
-            filter: blur(0.5px);
         }
 
         @keyframes eyeBlink {
@@ -328,32 +319,36 @@
             font-size: 38px;
         }
 
-        .player .hedgehog {
+        .player .mario {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            display: block;
             transition: transform 0.2s ease;
-            animation: hedgehogWalk 0.5s ease-in-out infinite;
+            animation: marioWalk 0.5s ease-in-out infinite;
         }
 
-        .player.face-up .hedgehog {
-            animation: hedgehogWalk 0.5s ease-in-out infinite;
+        .player.face-up .mario {
+            animation: marioWalk 0.5s ease-in-out infinite;
             transform: rotate(90deg);
         }
 
-        .player.face-down .hedgehog {
-            animation: hedgehogWalk 0.5s ease-in-out infinite;
+        .player.face-down .mario {
+            animation: marioWalk 0.5s ease-in-out infinite;
             transform: rotate(-90deg);
         }
 
-        .player.face-left .hedgehog {
-            animation: hedgehogWalk 0.5s ease-in-out infinite;
+        .player.face-left .mario {
+            animation: marioWalk 0.5s ease-in-out infinite;
             transform: scaleX(1);
         }
 
-        .player.face-right .hedgehog {
-            animation: hedgehogWalk 0.5s ease-in-out infinite;
+        .player.face-right .mario {
+            animation: marioWalk 0.5s ease-in-out infinite;
             transform: scaleX(-1);
         }
 
-        @keyframes hedgehogWalk {
+        @keyframes marioWalk {
             0%, 100% { }
             50% { filter: brightness(1.1); }
         }
@@ -609,6 +604,8 @@
             }
         ];
 
+        const MARIO_IMAGE_SRC = 'mario.png';
+
         class SokobanGame {
             constructor() {
                 this.currentLevel = 0;
@@ -623,25 +620,11 @@
                 // 创建音效上下文（需要用户交互才能启动）
                 this.audioContext = null;
                 this.audioEnabled = false;
+                this.audioInitPromise = null;
+                this.hapticEnabled = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
 
-                // 在第一次用户交互时初始化音频
-                const initAudio = () => {
-                    if (!this.audioContext) {
-                        try {
-                            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            this.audioEnabled = true;
-                            console.log('Audio initialized');
-                        } catch (e) {
-                            console.error('Audio init failed:', e);
-                        }
-                    }
-                    // 恢复音频上下文（iOS需要）
-                    if (this.audioContext && this.audioContext.state === 'suspended') {
-                        this.audioContext.resume().then(() => {
-                            console.log('Audio resumed');
-                        });
-                    }
-                };
+                // 在用户手势中初始化/恢复音频，兼容微信内置浏览器自动播放限制
+                const initAudio = () => this.ensureAudioReady();
 
                 // 监听多种事件以确保音频能初始化
                 document.addEventListener('touchstart', initAudio, { once: true });
@@ -656,42 +639,10 @@
                 }
 
                 // 移动音效
-                this.playMoveSound = () => {
-                    if (!this.audioEnabled || !this.audioContext) return;
-                    try {
-                        const oscillator = this.audioContext.createOscillator();
-                        const gainNode = this.audioContext.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        oscillator.frequency.value = 400;
-                        oscillator.type = 'sine';
-                        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-                        oscillator.start(this.audioContext.currentTime);
-                        oscillator.stop(this.audioContext.currentTime + 0.1);
-                    } catch (e) {
-                        console.error('Play sound failed:', e);
-                    }
-                };
+                this.playMoveSound = () => this.playTone(400, 'sine', 0.1, 0.1);
 
                 // 推箱子音效
-                this.playPushSound = () => {
-                    if (!this.audioEnabled || !this.audioContext) return;
-                    try {
-                        const oscillator = this.audioContext.createOscillator();
-                        const gainNode = this.audioContext.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        oscillator.frequency.value = 200;
-                        oscillator.type = 'square';
-                        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.15);
-                        oscillator.start(this.audioContext.currentTime);
-                        oscillator.stop(this.audioContext.currentTime + 0.15);
-                    } catch (e) {
-                        console.error('Play sound failed:', e);
-                    }
-                };
+                this.playPushSound = () => this.playTone(200, 'square', 0.15, 0.15);
 
                 // 过关音效
                 this.playWinSound = () => {
@@ -718,22 +669,69 @@
 
                 // 错误音效
                 this.playErrorSound = () => {
-                    if (!this.audioEnabled || !this.audioContext) return;
-                    try {
-                        const oscillator = this.audioContext.createOscillator();
-                        const gainNode = this.audioContext.createGain();
-                        oscillator.connect(gainNode);
-                        gainNode.connect(this.audioContext.destination);
-                        oscillator.frequency.value = 150;
-                        oscillator.type = 'sawtooth';
-                        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-                        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-                        oscillator.start(this.audioContext.currentTime);
-                        oscillator.stop(this.audioContext.currentTime + 0.1);
-                    } catch (e) {
-                        console.error('Play sound failed:', e);
-                    }
+                    this.playTone(150, 'sawtooth', 0.1, 0.1);
                 };
+            }
+
+            ensureAudioReady() {
+                if (!this.audioInitPromise) {
+                    this.audioInitPromise = (async () => {
+                        if (!this.audioContext) {
+                            try {
+                                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            } catch (e) {
+                                console.error('Audio init failed:', e);
+                                this.audioEnabled = false;
+                                return false;
+                            }
+                        }
+
+                        try {
+                            if (this.audioContext.state === 'suspended') {
+                                await this.audioContext.resume();
+                            }
+                            this.audioEnabled = this.audioContext.state === 'running';
+                        } catch (e) {
+                            console.error('Audio resume failed:', e);
+                            this.audioEnabled = false;
+                        }
+
+                        return this.audioEnabled;
+                    })();
+
+                    this.audioInitPromise.finally(() => {
+                        this.audioInitPromise = null;
+                    });
+                }
+
+                return this.audioInitPromise;
+            }
+
+            playTone(frequency, type, gainValue, duration) {
+                if (!this.audioEnabled || !this.audioContext || this.audioContext.state !== 'running') return;
+
+                try {
+                    const oscillator = this.audioContext.createOscillator();
+                    const gainNode = this.audioContext.createGain();
+                    const now = this.audioContext.currentTime;
+                    oscillator.connect(gainNode);
+                    gainNode.connect(this.audioContext.destination);
+                    oscillator.frequency.value = frequency;
+                    oscillator.type = type;
+                    gainNode.gain.setValueAtTime(gainValue, now);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                    oscillator.start(now);
+                    oscillator.stop(now + duration);
+                } catch (e) {
+                    console.error('Play sound failed:', e);
+                }
+            }
+
+            vibrate(pattern) {
+                if (!this.hapticEnabled) return;
+                try {
+                    navigator.vibrate(pattern);
+                } catch (e) {}
             }
 
             loadLevel(levelIndex) {
@@ -815,11 +813,12 @@
 
                         if (isPlayer) {
                             cell.className += ' player face-' + this.playerDirection;
-                            // 创建刺猬
-                            const hedgehog = document.createElement('div');
-                            hedgehog.className = 'hedgehog';
-                            hedgehog.textContent = '🦔';
-                            cell.appendChild(hedgehog);
+                            // 创建马里奥
+                            const mario = document.createElement('img');
+                            mario.className = 'mario';
+                            mario.src = MARIO_IMAGE_SRC;
+                            mario.alt = 'mario';
+                            cell.appendChild(mario);
                         }
 
                         board.appendChild(cell);
@@ -856,19 +855,8 @@
                 }
             }
 
-            move(direction) {
-                // 确保音频已初始化
-                if (!this.audioContext) {
-                    try {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        this.audioEnabled = true;
-                    } catch (e) {
-                        console.error('Audio init in move failed:', e);
-                    }
-                }
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().catch(e => console.error('Resume failed:', e));
-                }
+            async move(direction) {
+                await this.ensureAudioReady();
 
                 // 更新土拨鼠朝向
                 this.playerDirection = direction;
@@ -889,6 +877,7 @@
                 // Check if new position is valid
                 if (this.grid[newPos.r][newPos.c] === '#') {
                     this.playErrorSound();
+                    this.vibrate(35);
                     this.render(); // 重新渲染以更新朝向
                     return;
                 }
@@ -904,6 +893,7 @@
                     if (this.grid[boxNewPos.r][boxNewPos.c] === '#' ||
                         this.grid[boxNewPos.r][boxNewPos.c] === '$') {
                         this.playErrorSound();
+                        this.vibrate(35);
                         this.render(); // 重新渲染以更新朝向
                         return;
                     }
@@ -912,8 +902,10 @@
                     this.grid[newPos.r][newPos.c] = ' ';
                     this.grid[boxNewPos.r][boxNewPos.c] = '$';
                     this.playPushSound();
+                    this.vibrate(20);
                 } else {
                     this.playMoveSound();
+                    this.vibrate(10);
                 }
 
                 // Move player
@@ -931,6 +923,7 @@
 
                 if (allBoxesOnTargets) {
                     this.playWinSound();
+                    this.vibrate([45, 35, 45]);
                     document.getElementById('message').textContent = '🎉 恭喜过关！';
                     setTimeout(() => {
                         if (this.currentLevel < LEVELS.length - 1) {
@@ -950,32 +943,14 @@
             }
 
             reset() {
-                // 确保音频已初始化
-                if (!this.audioContext) {
-                    try {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        this.audioEnabled = true;
-                    } catch (e) {}
-                }
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().catch(e => {});
-                }
+                this.ensureAudioReady();
 
                 this.loadLevel(this.currentLevel);
                 document.getElementById('message').textContent = '';
             }
 
             nextLevel() {
-                // 确保音频已初始化
-                if (!this.audioContext) {
-                    try {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        this.audioEnabled = true;
-                    } catch (e) {}
-                }
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().catch(e => {});
-                }
+                this.ensureAudioReady();
 
                 if (this.currentLevel < LEVELS.length - 1) {
                     this.loadLevel(this.currentLevel + 1);
@@ -984,16 +959,7 @@
             }
 
             prevLevel() {
-                // 确保音频已初始化
-                if (!this.audioContext) {
-                    try {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                        this.audioEnabled = true;
-                    } catch (e) {}
-                }
-                if (this.audioContext && this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().catch(e => {});
-                }
+                this.ensureAudioReady();
 
                 if (this.currentLevel > 0) {
                     this.loadLevel(this.currentLevel - 1);

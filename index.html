@@ -296,15 +296,15 @@
                 opacity: 1;
             }
             25% {
-                transform: translate(-50%, -50%) scale(1.2) rotate(90deg);
+                transform: translate(-50%, -50%) scale(0.8) rotate(90deg);
                 opacity: 0.8;
             }
             50% {
-                transform: translate(-50%, -50%) scale(1.4) rotate(180deg);
+                transform: translate(-50%, -50%) scale(0.6) rotate(180deg);
                 opacity: 1;
             }
             75% {
-                transform: translate(-50%, -50%) scale(1.2) rotate(270deg);
+                transform: translate(-50%, -50%) scale(0.8) rotate(270deg);
                 opacity: 0.8;
             }
         }
@@ -325,8 +325,8 @@
         }
 
         .player .mario {
-            width: 36px;
-            height: 36px;
+            width: 42px;
+            height: 42px;
             object-fit: contain;
             display: block;
             transition: transform 0.2s ease;
@@ -335,22 +335,22 @@
 
         .player.face-up .mario {
             animation: marioWalk 0.5s ease-in-out infinite;
-            transform: rotate(90deg);
+            transform: rotate(-90deg);
         }
 
         .player.face-down .mario {
             animation: marioWalk 0.5s ease-in-out infinite;
-            transform: rotate(-90deg);
+            transform: rotate(90deg);
         }
 
         .player.face-left .mario {
             animation: marioWalk 0.5s ease-in-out infinite;
-            transform: scaleX(1);
+            transform: scaleX(-1);
         }
 
         .player.face-right .mario {
             animation: marioWalk 0.5s ease-in-out infinite;
-            transform: scaleX(-1);
+            transform: scaleX(1);
         }
 
         @keyframes marioWalk {

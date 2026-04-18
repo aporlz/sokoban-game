@@ -174,79 +174,27 @@
         }
 
         .floor {
-            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            background: #ffffff;
             border: 1px solid rgba(0,0,0,0.05);
         }
 
         .target {
-            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            background: #ffffff;
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
+            font-size: 32px;
         }
 
-        .target .eye-container {
-            position: relative;
-            width: 30px;
-            height: 30px;
-        }
-
-        .target .eye-white {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: #ffffff;
-            border-radius: 50%;
-            border: 2px solid #d5deea;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .target .eye-iris {
-            position: absolute;
-            width: 16px;
-            height: 16px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #2f80d8;
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            border: 1px solid #1f5ea1;
-        }
-
-        .target .eye-pupil {
-            position: absolute;
-            width: 7px;
-            height: 7px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #111111;
-            border-radius: 50%;
-        }
-
-        .target .eye-highlight {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            top: 28%;
-            left: 34%;
-            background: rgba(255,255,255,0.95);
-            border-radius: 50%;
-        }
-
-        @keyframes eyeBlink {
-            0%, 90%, 100% { transform: scaleY(1); }
-            95% { transform: scaleY(0.1); }
-        }
-
-        .target .eye-container {
-            animation: eyeBlink 4s ease-in-out infinite;
+        @media (min-width: 768px) {
+            .target {
+                font-size: 36px;
+            }
         }
 
         .box {
-            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            background: #ffffff;
             position: relative;
             width: 100%;
             height: 100%;
@@ -270,19 +218,24 @@
         }
 
         .box-on-target {
-            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            background: #ffffff;
             position: relative;
         }
 
         .box-on-target::before {
-            content: '⭐';
+            content: '';
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 42px;
+            width: 36px;
+            height: 36px;
+            background-image: url('star.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
             animation: starSparkle 1s ease-in-out infinite;
-            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8));
+            filter: drop-shadow(0 0 6px rgba(255, 80, 80, 0.45));
         }
 
         @keyframes starSparkle {
@@ -312,7 +265,7 @@
 
         .player {
             position: relative;
-            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%) !important;
+            background: #ffffff !important;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -605,6 +558,7 @@
         ];
 
         const MARIO_IMAGE_SRC = 'mario.png';
+        const STAR_IMAGE_SRC = 'star.png';
 
         class SokobanGame {
             constructor() {
@@ -786,27 +740,7 @@
                             cell.className += isTarget ? ' box-on-target' : ' box';
                         } else if (isTarget) {
                             cell.className += ' target';
-                            // 创建水彩画风格的眼睛
-                            const eyeContainer = document.createElement('div');
-                            eyeContainer.className = 'eye-container';
-
-                            const eyeWhite = document.createElement('div');
-                            eyeWhite.className = 'eye-white';
-
-                            const eyeIris = document.createElement('div');
-                            eyeIris.className = 'eye-iris';
-
-                            const eyePupil = document.createElement('div');
-                            eyePupil.className = 'eye-pupil';
-
-                            const eyeHighlight = document.createElement('div');
-                            eyeHighlight.className = 'eye-highlight';
-
-                            eyeIris.appendChild(eyePupil);
-                            eyeWhite.appendChild(eyeIris);
-                            eyeWhite.appendChild(eyeHighlight);
-                            eyeContainer.appendChild(eyeWhite);
-                            cell.appendChild(eyeContainer);
+                            cell.textContent = '🎯';
                         } else {
                             cell.className += ' floor';
                         }
@@ -822,35 +756,6 @@
                         }
 
                         board.appendChild(cell);
-                    }
-                }
-
-                // 更新所有眼睛的方向
-                this.updateAllEyes();
-            }
-
-            updateAllEyes() {
-                const targets = document.querySelectorAll('.target');
-                targets.forEach(targetCell => {
-                    const r = parseInt(targetCell.dataset.row);
-                    const c = parseInt(targetCell.dataset.col);
-                    this.updateEyeDirection(targetCell, r, c);
-                });
-            }
-
-            updateEyeDirection(eyeCell, eyeR, eyeC) {
-                const deltaR = this.playerPos.r - eyeR;
-                const deltaC = this.playerPos.c - eyeC;
-                const distance = Math.sqrt(deltaR * deltaR + deltaC * deltaC);
-
-                if (distance > 0) {
-                    const maxOffset = 7; // 虹膜最大偏移距离
-                    const offsetX = (deltaC / distance) * maxOffset;
-                    const offsetY = (deltaR / distance) * maxOffset;
-
-                    const iris = eyeCell.querySelector('.eye-iris');
-                    if (iris) {
-                        iris.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
                     }
                 }
             }

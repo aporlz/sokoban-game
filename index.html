@@ -355,13 +355,13 @@
             display: flex;
             gap: 15px;
             justify-content: center;
-            margin-top: 25px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
 
         @media (max-width: 767px) {
             .controls {
-                margin-top: 15px;
+                margin-top: 10px;
                 gap: 8px;
             }
         }
@@ -401,8 +401,8 @@
             grid-template-columns: repeat(3, 60px);
             gap: 8px;
             justify-content: center;
-            margin-top: 20px;
-            margin-bottom: 50px;
+            margin-top: 15px;
+            margin-bottom: 15px;
         }
 
         .arrow-keys button {
@@ -460,16 +460,16 @@
         </div>
         <div id="game-board"></div>
         <div class="message" id="message"></div>
-        <div class="controls">
-            <button onclick="game.reset()">重新开始</button>
-            <button onclick="game.nextLevel()">下一关</button>
-            <button onclick="game.prevLevel()">上一关</button>
-        </div>
         <div class="arrow-keys">
             <button onclick="game.move('up')">↑</button>
             <button onclick="game.move('left')">←</button>
             <button onclick="game.move('down')">↓</button>
             <button onclick="game.move('right')">→</button>
+        </div>
+        <div class="controls">
+            <button onclick="game.reset()">重新开始</button>
+            <button onclick="game.nextLevel()">下一关</button>
+            <button onclick="game.prevLevel()">上一关</button>
         </div>
         <div style="text-align: center; margin-top: 15px; color: #666;">
             使用方向键或点击按钮移动
